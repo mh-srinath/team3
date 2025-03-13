@@ -13,21 +13,27 @@ def schedule_task(request):
             object_id = form.cleaned_data['object_id']
             execution_time = form.cleaned_data['execution_time']
 
-            # Get the content type based on the selected model
-            model_class = {'ModelOne': ModelOne, 'ModelTwo': ModelTwo, 'ModelThree': ModelThree}[model_name]
-            content_type = ContentType.objects.get_for_model(model_class)
+            print("Model Name:", model_name)
+            print("Object ID:", object_id)
 
-            # Check if object exists
+            model_class = {'ModelOne': ModelOne, 'ModelTwo': ModelTwo, 'ModelThree': ModelThree}.get(model_name)
+
+            if not model_class:
+                messages.error(request, "Invalid Model Name")
+                return redirect('schedule_task')
+
+           # Check if object exists
             if not model_class.objects.filter(id=object_id).exists():
                 messages.error(request, "Invalid Object ID")
                 return redirect('schedule_task')
 
             # Create task
             TaskScheduler.objects.create(
-                content_type=content_type,
+                content_type=ContentType.objects.get_for_model(model_class),
                 object_id=object_id,
                 execution_time=execution_time
             )
+
             messages.success(request, "Task scheduled successfully!")
             return redirect('task_list')
 
@@ -35,6 +41,7 @@ def schedule_task(request):
         form = TaskSchedulerForm()
 
     return render(request, 'schedule_task.html', {'form': form})
+
 
 
 def task_list(request):
